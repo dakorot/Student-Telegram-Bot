@@ -34,6 +34,7 @@ exams = {
 subject = None
 average_grade = []
 
+
 @bot.message_handler(commands=['start'])
 def start_chat(message):
     bot.send_message(message.chat.id, "Hi!")
@@ -142,11 +143,11 @@ def delete_homework(message):
 
 
 def exams_schedule(message):
-    schedule = ""
+    exams_sched = ""
     for key in exams.keys():
-        schedule += f"{key}: {exams[key]['date']}, at time {exams[key]['time']}, type: {exams[key]['type']}\n"
+        exams_sched += f"{key}: {exams[key]['date']}, at time {exams[key]['time']}, type: {exams[key]['type']}\n"
 
-    bot.send_message(message.chat.id, schedule)
+    bot.send_message(message.chat.id, exams_sched)
     main_menu(message)
 
 
