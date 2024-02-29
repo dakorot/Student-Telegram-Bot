@@ -32,7 +32,7 @@ exams = {
 }
 
 subject = None
-
+average_grade = []
 
 @bot.message_handler(commands=['start'])
 def start_chat(message):
@@ -151,7 +151,28 @@ def exams_schedule(message):
 
 
 def average_grade_calculator(message):
-    pass
+    markup = telebot.types.ReplyKeyboardMarkup()
+    markup.add(telebot.types.KeyboardButton('Calculate the Average Grade'))
+
+    bot.send_message(message.chat.id, 'Type in a grade or proceed to calculation', reply_markup=markup)
+    bot.register_next_step_handler(message, average_grade_actions)
+
+
+def average_grade_actions(message):
+    sum = 0
+
+    if message.text == 'Calculate the Average Grade':
+        try:
+            for grade in average_grade:
+                sum += grade
+            bot.send_message(message.chat.id, f'Your average grade is {round(sum/len(average_grade), 1)}')
+            main_menu(message)
+        except ZeroDivisionError:
+            bot.send_message(message.chat.id, 'You have not input any grades. Please, try again')
+            main_menu(message)
+    else:
+        average_grade.append(float(message.text))
+        average_grade_calculator(message)
 
 
 if __name__ == '__main__':
