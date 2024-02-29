@@ -1,11 +1,35 @@
+import threading
+import time
 import telebot
 import sqlite3
+import schedule
 
 TOKEN = ""
 
 bot = telebot.TeleBot(TOKEN)
 
-schedule = {}
+lections_schedule = {
+    'Monday': [
+        {'name': 'Mathematics', 'time': '8:30'},
+        {'name': 'Physics', 'time': '10:15'}
+    ],
+    'Tuesday': [
+        {'name': 'Mathematics', 'time': '8:30'},
+        {'name': 'Physics', 'time': '12:00'}
+    ],
+    'Wednesday': [
+        {'name': 'Programming', 'time': '10:15'},
+        {'name': 'Physics', 'time': '12:00'}
+    ],
+    'Thursday': [
+        {'name': 'Programming', 'time': '12:00'},
+        {'name': 'Programming', 'time': '15:30'}
+    ],
+    'Friday': [
+        {'name': 'Physics', 'time': '8:30'},
+        {'name': 'Mathematics', 'time': '10:15'}
+    ],
+}
 
 homework = {
         'Mathematics': {
@@ -41,15 +65,27 @@ def start_chat(message):
 
     connect = sqlite3.connect('users_db.sql')
     cursor = connect.cursor()
-
     cursor.execute("CREATE TABLE IF NOT EXISTS users (chat_id int, username varchar(25))")
-    cursor.execute("INSERT INTO users (chat_id, username) VALUES ('%d', '%s')" % (message.chat.id, message.chat.username))
-
     connect.commit()
     cursor.close()
     connect.close()
 
+    register_user(message)
     main_menu(message)
+
+
+def register_user(message):
+    connect = sqlite3.connect('users_db.sql')
+    cursor = connect.cursor()
+    cursor.execute("SELECT * FROM users")
+    users = cursor.fetchall()
+
+    if (message.chat.id, message.chat.username) not in users:
+        cursor.execute("INSERT INTO users (chat_id, username) VALUES ('%d', '%s')" % (message.chat.id, message.chat.username))
+
+    connect.commit()
+    cursor.close()
+    connect.close()
 
 
 def main_menu(message):
@@ -109,10 +145,7 @@ def homework_actions(message):
 
 def register_homework_action(message):
     if message.text == 'See Homework':
-        hw_tasks = ""
-        for task in homework[subject]:
-            hw_tasks += f"Tasks for {subject}: {homework[subject]['tasks']}, deadline:"
-        bot.send_message(message.chat.id, hw_tasks)
+        bot.send_message(message.chat.id, f"Tasks for {subject}: {homework[subject]['tasks']}, deadline:")
         homework_actions(message)
     elif message.text == 'Add Homework':
         bot.send_message(message.chat.id, f'Write the {subject} tasks you want to add')
@@ -176,7 +209,48 @@ def average_grade_actions(message):
         average_grade_calculator(message)
 
 
+def send_schedule_notifications(chat_id):
+    current_weekday = time.strftime('%A')
+    current_time = time.strftime('%H:%M')
+    lectures_today = lections_schedule[current_weekday]
+
+    for lecture in lectures_today:
+        lecture_time = lecture['time']
+        notification_time = int(lecture_time[:2]) * 60 + int(lecture_time[3:]) - 5
+        notification_time_hours = notification_time // 60
+        notification_time_minutes = notification_time % 60
+
+        if current_time == f'{notification_time_hours:02d}:{notification_time_minutes:02d}':
+            bot.send_message(chat_id=chat_id, text=f"{lecture['name']} starts in 5 minutes!")
+
+
+def get_users():
+    connect = sqlite3.connect('users_db.sql')
+    cursor = connect.cursor()
+
+    cursor.execute('SELECT * FROM users')
+    users = cursor.fetchall()
+    chat_data = []
+
+    for user in users:
+        chat_data.append(user[0])
+
+    return chat_data
+
+
 if __name__ == '__main__':
-    pass
+    def schedule_job():
+        chat_ids = get_users()
+        for chat in chat_ids:
+            send_schedule_notifications(chat)
+
+    def run_schedule():
+        schedule.every(105).minutes.do(schedule_job)
+        while True:
+            schedule.run_pending()
+            time.sleep(1)
+
+    schedule_thread = threading.Thread(target=run_schedule)
+    schedule_thread.start()
 
 bot.infinity_polling()
