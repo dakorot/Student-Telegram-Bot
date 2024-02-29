@@ -160,13 +160,13 @@ def average_grade_calculator(message):
 
 
 def average_grade_actions(message):
-    sum = 0
+    sum_grades = 0
 
     if message.text == 'Calculate the Average Grade':
         try:
             for grade in average_grade:
-                sum += grade
-            bot.send_message(message.chat.id, f'Your average grade is {round(sum/len(average_grade), 1)}')
+                sum_grades += grade
+            bot.send_message(message.chat.id, f'Your average grade is {round(sum_grades/len(average_grade), 1)}')
             main_menu(message)
         except ZeroDivisionError:
             bot.send_message(message.chat.id, 'You have not input any grades. Please, try again')
