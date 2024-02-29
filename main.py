@@ -19,6 +19,18 @@ homework = {
         }
     }
 
+exams = {
+    'Mathematics': {
+        'date': '', 'time': 'to be updated', 'type': 'exam'
+    },
+    'Physics': {
+        'date': '', 'time': 'to be updated', 'type': 'exam'
+    },
+    'Programming': {
+        'date': '', 'time': 'to be updated', 'type': "student's record"
+    }
+}
+
 subject = None
 
 
@@ -130,7 +142,12 @@ def delete_homework(message):
 
 
 def exams_schedule(message):
-    pass
+    schedule = ""
+    for key in exams.keys():
+        schedule += f"{key}: {exams[key]['date']}, at time {exams[key]['time']}, type: {exams[key]['type']}\n"
+
+    bot.send_message(message.chat.id, schedule)
+    main_menu(message)
 
 
 def average_grade_calculator(message):
